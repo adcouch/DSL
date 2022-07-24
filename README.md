@@ -1,6 +1,6 @@
 # DSL
 
-This is a boxstarter script for a DSL Laptopn.
+This is a boxstarter script for a DSL Laptop.
 
 To deploy:
 
