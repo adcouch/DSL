@@ -10,5 +10,5 @@ To deploy:
 
 ```powershell
 $Cred = Get-Credential $env:USERNAME
-Install-BoxstarterPackage -PackageName https://raw.githubusercontent.com/adcouch/dsl/main/windply/dslwin_deploy.choco -Credential $Cred 
+Install-BoxstarterPackage -PackageName https://raw.githubusercontent.com/adcouch/dsl/main/windply/dsl_deploy.choco -Credential $Cred 
 ```
