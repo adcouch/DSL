@@ -34,6 +34,14 @@ choco install packer
 choco install evernote
 choco install microsoft-office-deployment
 
+# Windows Features
+Disable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-Hypervisor
+
+#vagrant
+vagrant plugin install vagrant-vmware-desktop
+vagrant box add kalilinux/rolling --provider vmware_desktop
+#vagrant init kalilinux/rolling
+
 # GitHub
 
 # IE first run
