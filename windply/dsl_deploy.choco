@@ -32,6 +32,7 @@ choco install vagrant
 choco install vagrant-vmware-utility
 choco install packer
 choco install evernote
+choco install microsoft-office-deployment
 
 # GitHub
 
