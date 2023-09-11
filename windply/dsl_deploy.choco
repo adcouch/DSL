@@ -33,6 +33,7 @@ choco install vagrant-vmware-utility
 choco install packer
 choco install evernote
 choco install microsoft-office-deployment
+choco install microsoftazurestorageexplorer
 
 # Windows Features
 Disable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-Hypervisor
