@@ -1,0 +1,66 @@
+New-Item -Path C:\ -Name Temp -ItemType Directory -ErrorAction SilentlyContinue
+$env:TEMP = "C:\Temp"
+$env:TMP = "C:\Temp"
+
+Remove-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run -Name bginfo -ErrorAction SilentlyContinue
+Remove-Item C:\BGinfo\ -Recurse -Force -ErrorAction SilentlyContinue
+
+New-Item -Path C:\ -Name payloads -ItemType Directory -ErrorAction SilentlyContinue
+
+# Defender
+Add-MpPreference -ExclusionPath "C:\tools\"
+Add-MpPreference -ExclusionPath "C:\payloads\"
+$Downloads = Get-ItemPropertyValue 'HKCU:\software\microsoft\windows\currentversion\explorer\shell folders\' -Name '{374DE290-123F-4565-9164-39C4925E467B}'
+Add-MpPreference -ExclusionPath $Downloads
+Set-MpPreference -MAPSReporting Disabled
+Set-MpPreference -SubmitSamplesConsent NeverSend
+
+# Packages
+choco feature enable -n allowGlobalConfirmation
+choco install git
+choco install vscode
+choco install openjdk11
+choco install sysinternals --params "/InstallDir:C:\tools\sysinternals"
+choco install googlechrome --ignore-checksums
+choco install 7zip
+choco install putty
+choco install notepadplusplus
+choco install greenshot
+choco install microsoft-windows-terminal
+choco install evernote
+choco install microsoft-office-deployment
+
+# Windows Features
+Disable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-Hypervisor
+
+# IE first run
+New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Internet Explorer"
+New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Internet Explorer\Main"
+New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Internet Explorer\Main" -Name DisableFirstRunCustomize -Value 1
+
+# GPRegistryPolicy
+Install-Module GPRegistryPolicy -Force
+
+# UI
+Import-Module "$env:ChocolateyInstall\helpers\chocolateyInstaller.psm1" -Force
+Set-WindowsExplorerOptions -EnableShowFileExtensions -EnableShowFullPathInTitleBar -EnableExpandToOpenFolder -EnableShowRibbon
+Install-ChocolateyShortcut -shortcutFilePath "C:\Users\Public\Desktop\tools.lnk" -targetPath C:\tools\
+
+# Misc
+$DesktopPath = [Environment]::GetFolderPath("Desktop")
+Install-ChocolateyPinnedTaskBarItem "C:\Windows\system32\mstsc.exe"
+Remove-Item -Path "C:\Users\Public\Desktop\Boxstarter Shell.lnk"
+Remove-Item -Path "$DesktopPath\eula.lnk"
+Remove-Item -Path "C:\Users\Public\Desktop\Visual Studio Code.lnk"
+Remove-Item -Path C:\Temp\ -Recurse -Force
+Install-WindowsUpdate -AcceptEula
+
+# Hardening
+New-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows NT\DNSClient" -Name EnableMulticast -Value 0
+New-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Internet Explorer\Main" -Name NotifyDisableIEOptions -Value 1
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Cryptography\Wintrust\Config" -Name EnableCertPaddingCheck -Value 1
+New-ItemProperty -Path "HKLM:\Software\Wow6432Node\Microsoft\Cryptography\Wintrust\Config" -Name EnableCertPaddingCheck -Value 1
+New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" -Name FeatureSettingsOverrideMask -Value 3
+New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" -Name FeatureSettingsOverride -Value 72
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Virtualization" -Name MinVmVersionForCpuBasedMitigations -Value "1.0"
+New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" -Name ClearPageFileAtShutdown -Value 1
