@@ -10,5 +10,7 @@ To deploy:
 
 ```powershell
 $Cred = Get-Credential $env:USERNAME
+```
+```powershell
 Install-BoxstarterPackage -PackageName https://raw.githubusercontent.com/adcouch/dsl/main/windply/dsl_deploy.choco -Credential $Cred 
 ```
