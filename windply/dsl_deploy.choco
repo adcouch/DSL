@@ -1,13 +1,20 @@
+# Create necessary directories
 New-Item -Path C:\ -Name Temp -ItemType Directory -ErrorAction SilentlyContinue
+New-Item -Path C:\ -Name Data -ItemType Directory -ErrorAction SilentlyContinue
+New-Item -Path C:\Data -Name vms -ItemType Directory -ErrorAction SilentlyContinue
+
+# Set environment variables
 $env:TEMP = "C:\Temp"
 $env:TMP = "C:\Temp"
 
+# Remove unnecessary items
 Remove-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run -Name bginfo -ErrorAction SilentlyContinue
 Remove-Item C:\BGinfo\ -Recurse -Force -ErrorAction SilentlyContinue
 
+# Create payloads directory
 New-Item -Path C:\ -Name payloads -ItemType Directory -ErrorAction SilentlyContinue
 
-# Defender
+# Configure Windows Defender
 Add-MpPreference -ExclusionPath "C:\tools\"
 Add-MpPreference -ExclusionPath "C:\payloads\"
 $Downloads = Get-ItemPropertyValue 'HKCU:\software\microsoft\windows\currentversion\explorer\shell folders\' -Name '{374DE290-123F-4565-9164-39C4925E467B}'
@@ -15,8 +22,10 @@ Add-MpPreference -ExclusionPath $Downloads
 Set-MpPreference -MAPSReporting Disabled
 Set-MpPreference -SubmitSamplesConsent NeverSend
 
-# Packages
+# Enable Chocolatey global confirmation
 choco feature enable -n allowGlobalConfirmation
+
+# Install necessary packages
 choco install git
 choco install vscode
 choco install openjdk11
@@ -31,35 +40,59 @@ choco install vmwareworkstation
 choco install vagrant
 choco install vagrant-vmware-utility
 choco install packer
-choco install evernote
+choco install obsidian
 choco install microsoft-office-deployment
 choco install microsoftazurestorageexplorer
 choco install python3
 
-# Windows Features
+# Disable Hyper-V
 Disable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-Hypervisor
 
-#vagrant
+# Vagrant setup
 vagrant plugin install vagrant-vmware-desktop
 vagrant box add kalilinux/rolling --provider vmware_desktop
 #vagrant init kalilinux/rolling
 
-# GitHub
+# Set VMware default virtual machine path
+$preferencesFile = "$env:APPDATA\VMware\preferences.ini"
 
-# IE first run
+function Set-VMwareDefaultVMPath {
+    param (
+        [string]$path
+    )
+
+    if (Test-Path $preferencesFile) {
+        $content = Get-Content $preferencesFile
+
+        if ($content -notmatch "prefvmx.defaultVMPath") {
+            Add-Content $preferencesFile "prefvmx.defaultVMPath = `"$path`""
+        } else {
+            $content = $content -replace "prefvmx.defaultVMPath\s*=\s*.*", "prefvmx.defaultVMPath = `"$path`""
+            Set-Content $preferencesFile $content
+        }
+    } else {
+        New-Item -Path $preferencesFile -ItemType File -Force
+        Add-Content $preferencesFile "prefvmx.defaultVMPath = `"$path`""
+    }
+}
+
+# Change the default VM path
+Set-VMwareDefaultVMPath -path "C:\data\vms"
+
+# Configure Internet Explorer first run settings
 New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Internet Explorer"
 New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Internet Explorer\Main"
 New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Internet Explorer\Main" -Name DisableFirstRunCustomize -Value 1
 
-# GPRegistryPolicy
+# Install GPRegistryPolicy module
 Install-Module GPRegistryPolicy -Force
 
-# UI
+# UI customisations
 Import-Module "$env:ChocolateyInstall\helpers\chocolateyInstaller.psm1" -Force
 Set-WindowsExplorerOptions -EnableShowFileExtensions -EnableShowFullPathInTitleBar -EnableExpandToOpenFolder -EnableShowRibbon
 Install-ChocolateyShortcut -shortcutFilePath "C:\Users\Public\Desktop\tools.lnk" -targetPath C:\tools\
 
-# Misc
+# Miscellaneous settings
 $DesktopPath = [Environment]::GetFolderPath("Desktop")
 Install-ChocolateyPinnedTaskBarItem "C:\Windows\system32\mstsc.exe"
 Remove-Item -Path "C:\Users\Public\Desktop\Boxstarter Shell.lnk"
@@ -68,7 +101,7 @@ Remove-Item -Path "C:\Users\Public\Desktop\Visual Studio Code.lnk"
 Remove-Item -Path C:\Temp\ -Recurse -Force
 Install-WindowsUpdate -AcceptEula
 
-# Hardening
+# System hardening settings
 New-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows NT\DNSClient" -Name EnableMulticast -Value 0
 New-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Internet Explorer\Main" -Name NotifyDisableIEOptions -Value 1
 New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Cryptography\Wintrust\Config" -Name EnableCertPaddingCheck -Value 1
