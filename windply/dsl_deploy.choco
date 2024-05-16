@@ -2,6 +2,7 @@
 New-Item -Path C:\ -Name Temp -ItemType Directory -ErrorAction SilentlyContinue
 New-Item -Path C:\ -Name Data -ItemType Directory -ErrorAction SilentlyContinue
 New-Item -Path C:\Data -Name vms -ItemType Directory -ErrorAction SilentlyContinue
+New-Item -Path "C:\data\vms\kali" -ItemType Directory -Force -ErrorAction SilentlyContinue
 
 # Set environment variables
 $env:TEMP = "C:\Temp"
@@ -51,7 +52,6 @@ Disable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-Hypervisor
 # Vagrant setup
 vagrant plugin install vagrant-vmware-desktop
 vagrant box add kalilinux/rolling --provider vmware_desktop
-#vagrant init kalilinux/rolling
 
 # Set VMware default virtual machine path
 $preferencesFile = "$env:APPDATA\VMware\preferences.ini"
@@ -78,6 +78,33 @@ function Set-VMwareDefaultVMPath {
 
 # Change the default VM path
 Set-VMwareDefaultVMPath -path "C:\data\vms"
+
+# Create Vagrantfile for Kali VM
+$vagrantfileContent = @'
+Vagrant.configure("2") do |config|
+  config.vm.box = "kalilinux/rolling"
+
+  config.vm.provider "vmware_desktop" do |v|
+    v.name = "MyCustomKaliVM"
+    v.memory = 4096  # Set the RAM to 4GB
+  end
+
+  # Provisioning with a shell script from GitHub
+  config.vm.provision "shell", inline: <<-SHELL
+    if [ ! -f /var/vagrant_provisioned ]; then
+      apt-get update
+      apt-get install -y curl
+      curl -o /tmp/post-install.sh https://raw.githubusercontent.com/yourusername/yourrepository/main/post-install.sh
+      chmod +x /tmp/post-install.sh
+      /tmp/post-install.sh
+      touch /var/vagrant_provisioned
+    fi
+  SHELL
+end
+'@
+
+$vagrantfilePath = "C:\data\vms\kali\Vagrantfile"
+Set-Content -Path $vagrantfilePath -Value $vagrantfileContent
 
 # Configure Internet Explorer first run settings
 New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Internet Explorer"
@@ -108,5 +135,3 @@ New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Cryptography\Wintrust\Config" -
 New-ItemProperty -Path "HKLM:\Software\Wow6432Node\Microsoft\Cryptography\Wintrust\Config" -Name EnableCertPaddingCheck -Value 1
 New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" -Name FeatureSettingsOverrideMask -Value 3
 New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" -Name FeatureSettingsOverride -Value 72
-New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Virtualization" -Name MinVmVersionForCpuBasedMitigations -Value "1.0"
-New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" -Name ClearPageFileAtShutdown -Value 1
