@@ -161,3 +161,13 @@ New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Cryptography\Wintrust\Config" -
 New-ItemProperty -Path "HKLM:\Software\Wow6432Node\Microsoft\Cryptography\Wintrust\Config" -Name EnableCertPaddingCheck -Value 1
 New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" -Name FeatureSettingsOverrideMask -Value 3
 New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" -Name FeatureSettingsOverride -Value 72
+
+# BitLocker setup (move revocery key after install)
+$RecoveryKeyPath = "C:\BitLockerRecoveryKey.txt"
+$bitLockerStatus = Get-BitLockerVolume -MountPoint "C:"
+
+if ($bitLockerStatus.ProtectionStatus -eq "Off") {
+    Enable-BitLocker -MountPoint "C:" -RecoveryKeyPath $RecoveryKeyPath -EncryptionMethod XtsAes128 -UsedSpaceOnly
+} else {
+    Write-Output "BitLocker is already enabled on C: drive."
+}
