@@ -79,13 +79,36 @@ function Set-VMwareDefaultVMPath {
 # Change the default VM path
 Set-VMwareDefaultVMPath -path "C:\data\vms"
 
-# Create Vagrantfile for Kali VM
-$vagrantfileContent = @'
+# Create Vagrantfile for Kali1 VM
+$vagrantfileContent1 = @'
 Vagrant.configure("2") do |config|
   config.vm.box = "kalilinux/rolling"
 
   config.vm.provider "vmware_desktop" do |v|
-    v.name = "Kali"
+    v.name = "Kali1"
+    v.memory = 4096  # Set the RAM to 4GB
+  end
+
+  # Provisioning with a shell script from GitHub
+  config.vm.provision "shell", inline: <<-SHELL
+    if [ ! -f /var/vagrant_provisioned ]; then
+      apt-get update
+      apt-get install -y curl
+      curl -o /tmp/post-install.sh https://raw.githubusercontent.com/adcouch/kali/main/setup/custom_2.sh
+      chmod +x /tmp/post-install.sh
+      /tmp/post-install.sh
+      touch /var/vagrant_provisioned
+    fi
+  SHELL
+end
+'@
+# Create Vagrantfile for Kali2 VM
+$vagrantfileContent2 = @'
+Vagrant.configure("2") do |config|
+  config.vm.box = "kalilinux/rolling"
+
+  config.vm.provider "vmware_desktop" do |v|
+    v.name = "Kali2"
     v.memory = 4096  # Set the RAM to 4GB
   end
 
@@ -103,8 +126,11 @@ Vagrant.configure("2") do |config|
 end
 '@
 
-$vagrantfilePath = "C:\data\vms\kali\Vagrantfile"
-Set-Content -Path $vagrantfilePath -Value $vagrantfileContent
+$vagrantfilePath1 = "C:\data\vms\kali1\Vagrantfile"
+Set-Content -Path $vagrantfilePath1 -Value $vagrantfileContent1
+
+$vagrantfilePath2 = "C:\data\vms\kali2\Vagrantfile"
+Set-Content -Path $vagrantfilePath2 -Value $vagrantfileContent2
 
 # Configure Internet Explorer first run settings
 New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Internet Explorer"
